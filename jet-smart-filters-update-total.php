@@ -85,6 +85,28 @@ if ( ! class_exists( 'JSF_Update_Total_on_Filtering' ) ) {
 							}
 
 						} );
+
+						if ( ! JetFormBuilder ) {
+							return;
+						}
+
+						JetSmartFilters.events.subscribe( 'ajaxFilters/updated', function( provider, queryId, response ) {
+							
+							if ( ! response.form_values ) {
+								return;
+							}
+
+							for ( const formId in response.form_values ) {
+								for ( const fieldName in response.form_values[ formId ] ) {
+									if ( ! JetFormBuilder[ formId ] || ! JetFormBuilder[ formId ].getInput( fieldName ) ) {
+										continue;
+									}
+
+									JetFormBuilder[ formId ].getInput( fieldName ).value.current = response.form_values[ formId ][ fieldName ];
+								}
+							}
+
+						} );
 					});
 				</script>
 			<?php
@@ -167,12 +189,19 @@ if ( ! class_exists( 'JSF_Update_Total_on_Filtering' ) ) {
 								'type'        => 'number',
 								'min_value'   => '0',
 							),
+							array (
+								'title'       => 'To form fields',
+								'name'        => 'form_fields',
+								'object_type' => 'field',
+								'width'       => '100%',
+								'type'        => 'text',
+							),
 						),
 						'repeater_collapsed' => false,
 						'repeater_title_field' => 'selector',
 					),
 				),
-				'parent' => jet_smart_filters()->post_type->slug(),
+				'parent' => 'options-general.php',
 				'icon' => 'dashicons-bell',
 				'capability' => 'manage_options',
 				'position' => '',
@@ -294,10 +323,23 @@ if ( ! class_exists( 'JSF_Update_Total_on_Filtering' ) ) {
 				$results = $wpdb->get_results( $sql, 'ARRAY_A' );
 
 				$result = $results[0]['result'] ?? 0;
+
+				if ( ! empty( $field['form_fields'] ) ) {
+
+					$fields = explode( ',', $field['form_fields'] );
+
+					foreach ( $fields as $field ) {
+						$form_field_data = explode( '/', $field );
+
+						$data['form_values'][ $form_field_data[0] ][ $form_field_data[1] ] = $result;
+					}
+					
+				}
 				
 				if ( $as_num && is_numeric( $result ) ) {
 					$result = number_format( ( float ) $result, $d_count, $d_sep, $t_sep );
 				}
+
 				$data['query_type'] = $this->query_type;
 				$data['fragments'][ $selector ] = sprintf( '%1$s%2$s%3$s', $f_prefix, $result, $f_suffix );
 				
