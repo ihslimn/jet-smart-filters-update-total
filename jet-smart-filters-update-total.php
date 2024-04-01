@@ -328,10 +328,16 @@ if ( ! class_exists( 'JSF_Update_Total_on_Filtering' ) ) {
 
 					$fields = explode( ',', $field['form_fields'] );
 
+					$value = $result;
+
+					if ( is_numeric( $value ) ) {
+						$value = number_format( ( float ) $value, $d_count, '.', '' );
+					}
+					
 					foreach ( $fields as $field ) {
 						$form_field_data = explode( '/', $field );
 
-						$data['form_values'][ $form_field_data[0] ][ $form_field_data[1] ] = $result;
+						$data['form_values'][ $form_field_data[0] ][ $form_field_data[1] ] = $value;
 					}
 					
 				}
